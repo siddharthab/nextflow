@@ -16,6 +16,8 @@
 
 package nextflow.file.http
 
+import nextflow.file.ForeignOpenOption
+
 import static nextflow.file.http.XFileSystemConfig.*
 
 import java.nio.ByteBuffer
@@ -341,18 +343,21 @@ abstract class XFileSystemProvider extends FileSystemProvider {
         if (path.class != XPath)
             throw new ProviderMismatchException()
 
+        boolean requireCompletion = false;
         if (options.length > 0) {
             for (OpenOption opt: options) {
                 // All OpenOption values except for APPEND and WRITE are allowed
-                if (opt == StandardOpenOption.APPEND ||
-                        opt == StandardOpenOption.WRITE)
-                    throw new UnsupportedOperationException("'$opt' not allowed");
+                if (opt == StandardOpenOption.APPEND || opt == StandardOpenOption.WRITE)
+                    throw new UnsupportedOperationException("'$opt' not allowed")
+
+                if (opt == ForeignOpenOption.FULL_DOWNLOAD)
+                    requireCompletion = true
             }
         }
 
         final conn = toConnection(path)
         final length = conn.getContentLengthLong()
-        return length>0
+        return length>0 && requireCompletion
             ? new FixedInputStream(conn.getInputStream(), length)
             : conn.getInputStream()
     }

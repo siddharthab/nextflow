@@ -87,7 +87,9 @@ public class CopyMoveHelper {
             return;
         }
 
-        try (InputStream in = Files.newInputStream(source)) {
+        // open the remote input stream using FULL_DOWNLOAD option, so it will error if not
+        // all bytes are read before closing
+        try (InputStream in = Files.newInputStream(source, ForeignOpenOption.FULL_DOWNLOAD)) {
             Files.copy(in, target);
         }
     }
